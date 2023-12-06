@@ -21,7 +21,7 @@ exports.getAllSubjects = (req, res, next) => {
 exports.getSubject = async (req , res, next)=>{
     Subjects.findById(req.params.id)
     .then((data) => {
-      if (data == null) throw new Error("Subjects Not Found");
+      if (data == null) throw new Error("Subject Not Found");
       res.status(200).json({ data });
     })
     .catch((err) => {

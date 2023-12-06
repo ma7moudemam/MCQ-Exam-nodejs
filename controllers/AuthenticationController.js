@@ -5,6 +5,7 @@ const JWT = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { response } = require("express");
 const refreshTokens = require("../refreshTokens");
+const nodemailer = require("nodemailer");
 
 function createAccessToken(email, role, user) {
   const payload = {
@@ -17,7 +18,7 @@ function createAccessToken(email, role, user) {
     expiresIn: "12h",
   };
 
-  const token = JWT.sign(payload, process.env.ACCESS_TOKEN_SECRET, options);
+  const token = JWT.sign(payload, process.env.ACCESS_TOKEN_SECRET, option);
 
   return token;
 }
@@ -29,6 +30,7 @@ function createRefreshToken(email, role) {
   };
 
   const token = JWT.sign(payload, process.env.REFRESH_SECRET_KEY);
+  return token;
 }
 
 exports.login = async (req, res, next) => {
@@ -36,8 +38,8 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (
-      email === process.env.ADMIN_EMAIL &&
-      password === process.env.ADMIN_PASSWORD
+      email == process.env.ADMIN_EMAIL &&
+      password == process.env.ADMIN_PASSWORD
     ) {
       const token = createAccessToken(email, "admin", { userName: "Admin" });
       const refreshToken = createRefreshToken(email, "admin");
@@ -65,67 +67,80 @@ exports.login = async (req, res, next) => {
   }
 };
 
+exports.register = async (req, res, next) => {
+  try {
+    const {
+      userName,
+      email,
+      phoneNumber,
+      password,
+      image,
+      address,
+      dateOfBirth,
+    } = req.body;
 
-exports.register = async (req , res, next)=>{
-    try{
+    const existingUser = await User.findOne({ email });
 
-        const {
-            userName,
-            email,
-            phoneNumber,
-            password,
-            image,
-            address,
-            dateOfBirth,
-          } = req.body;
-
-
-        const existingUser = await User.findOne({email});
-
-        if (existingUser) {
-            throw new Error('User already exists.');
-          }
-
-        const hashedPassword = await bcrypt.hash(password, 15);
-
-        const user = await User.create({
-            userName,
-            email,
-            phoneNumber,
-            password: hashedPassword,
-            image,
-            address: {
-              city: address.city,
-              street: address.street,
-              building: address.building
-            },
-            dateOfBirth: {
-              day: dateOfBirth.day,
-              month: dateOfBirth.month,
-              year: dateOfBirth.year
-            },
-            age: calculateAge(dateOfBirth.year,  dateOfBirth.month, dateOfBirth.day),
-            blocked: false
-          });
-
-          res.status(201).json({ message: 'User created successfully.', user });
-
+    if (existingUser) {
+      throw new Error("User already exists.");
     }
-    catch(err){
-        next(err);
-    }
-}
 
+    const hashedPassword = await bcrypt.hash(password, 15);
 
+    // Create a transporter with your SMTP configuration
+    const transporter = nodemailer.createTransport({
+      service: "hotmail",
+      auth: {
+        user: process.env.EMAIL_SENDER, // Your email address
+        pass: process.env.EMAIL_SENDER_PASSWORD, // Your email password
+      },
+    });
+
+    // Define the email options
+    const mailOptions = {
+      from: process.env.EMAIL_SENDER, // Sender's email address
+      to: email, // Recipient's email address
+      subject: "Registration Confirmation",
+      text: "Thank you for registering!",
+    };
+
+     // Send the registration confirmation email
+     await transporter.sendMail(mailOptions);
+
+     const user = await User.create({
+      userName,
+      email,
+      phoneNumber,
+      password: hashedPassword,
+      image,
+      address: {
+        city: address.city,
+        street: address.street,
+        building: address.building,
+      },
+      dateOfBirth: {
+        day: dateOfBirth.day,
+        month: dateOfBirth.month,
+        year: dateOfBirth.year,
+      },
+      age: calculateAge(dateOfBirth.year, dateOfBirth.month, dateOfBirth.day),
+      blocked: false,
+    });
+
+    res.status(201).json({ message: "User created successfully.", user });
+  } catch (err) {
+    next(err);
+  }
+};
 
 function calculateAge(year, month, day) {
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    const currentDay = new Date().getDate();
-    let age = currentYear - year;
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentDay = new Date().getDate();
+  let age = currentYear - year;
 
-    if (month > currentMonth || (month === currentMonth && day > currentDay)) {
-      age--;
-    }
-    return age;
+  if (month > currentMonth || (month === currentMonth && day > currentDay)) {
+    age--;
+  }
+  return age;
 }

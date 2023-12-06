@@ -4,10 +4,12 @@ const mongoose = require('mongoose');
 const subject = new mongoose.Schema({
     name: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
     },
     slug:{
       type:String,
+      unique: true,
     },
     questions: [
       {
@@ -40,10 +42,12 @@ const subject = new mongoose.Schema({
     examTime:{
       type:Number,
       required:true,
+      min: 30,
     },
     questionTime:{
       type:Number,
       required:true,
+      min: 1,
     }
   });
 
