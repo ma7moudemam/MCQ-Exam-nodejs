@@ -7,6 +7,11 @@ const { response } = require("express");
 const refreshTokens = require("../refreshTokens");
 const nodemailer = require("nodemailer");
 
+
+
+const verificationCodes = {};
+
+
 function createAccessToken(email, role, user) {
   const payload = {
     email: email,
@@ -133,6 +138,27 @@ exports.register = async (req, res, next) => {
   }
 };
 
+
+exports.verifyCode = async (req , res, next)=>{
+  try{
+    const {
+      email
+    } = req.body;
+     // Generate a random 6-digit code (you might want to use a more secure method)
+  const verificationCode = Math.floor(100000 + Math.random() * 900000);
+
+   // Store the code in the database
+   verificationCodes[email] = verificationCode;
+
+   // Send the verification code to the user (e.g., via email or SMS)
+  // For simplicity, we'll just return the code in the response
+    res.json({ code: verificationCode });
+  }
+  catch (err){
+    next(err);
+  }
+}
+
 function calculateAge(year, month, day) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -144,3 +170,4 @@ function calculateAge(year, month, day) {
   }
   return age;
 }
+
