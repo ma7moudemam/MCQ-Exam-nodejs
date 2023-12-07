@@ -7,36 +7,7 @@ const { response } = require("express");
 const refreshTokens = require("../refreshTokens");
 const nodemailer = require("nodemailer");
 
-
-
-const verificationCodes = {};
-
-
-function createAccessToken(email, role, user) {
-  const payload = {
-    email: email,
-    role: role,
-    user: user,
-  };
-
-  const option = {
-    expiresIn: "12h",
-  };
-
-  const token = JWT.sign(payload, process.env.ACCESS_TOKEN_SECRET, option);
-
-  return token;
-}
-
-function createRefreshToken(email, role) {
-  const payload = {
-    email: email,
-    role: role,
-  };
-
-  const token = JWT.sign(payload, process.env.REFRESH_SECRET_KEY);
-  return token;
-}
+/* ***************************** Login ****************************** */
 
 exports.login = async (req, res, next) => {
   try {
@@ -72,6 +43,10 @@ exports.login = async (req, res, next) => {
   }
 };
 
+/* ************************************************************************* */
+
+/* ***************************** Register ****************************** */
+
 exports.register = async (req, res, next) => {
   try {
     const {
@@ -92,27 +67,7 @@ exports.register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 15);
 
-    // Create a transporter with your SMTP configuration
-    const transporter = nodemailer.createTransport({
-      service: "hotmail",
-      auth: {
-        user: process.env.EMAIL_SENDER, // Your email address
-        pass: process.env.EMAIL_SENDER_PASSWORD, // Your email password
-      },
-    });
-
-    // Define the email options
-    const mailOptions = {
-      from: process.env.EMAIL_SENDER, // Sender's email address
-      to: email, // Recipient's email address
-      subject: "Registration Confirmation",
-      text: "Thank you for registering!",
-    };
-
-     // Send the registration confirmation email
-     await transporter.sendMail(mailOptions);
-
-     const user = await User.create({
+    const user = await User.create({
       userName,
       email,
       phoneNumber,
@@ -132,32 +87,63 @@ exports.register = async (req, res, next) => {
       blocked: false,
     });
 
+    // Generate a verification code
+    generateVerificationCode(email);
+
+    sendEmail(email);
+
     res.status(201).json({ message: "User created successfully.", user });
   } catch (err) {
     next(err);
   }
 };
 
+/* ************************************************************************* */
 
-exports.verifyCode = async (req , res, next)=>{
-  try{
-    const {
-      email
-    } = req.body;
-     // Generate a random 6-digit code (you might want to use a more secure method)
-  const verificationCode = Math.floor(100000 + Math.random() * 900000);
+/* ***************************** verifyCode ****************************** */
 
-   // Store the code in the database
-   verificationCodes[email] = verificationCode;
+exports.verifyCode = async (req, res, next) => {
+  try {
 
-   // Send the verification code to the user (e.g., via email or SMS)
-  // For simplicity, we'll just return the code in the response
-    res.json({ code: verificationCode });
-  }
-  catch (err){
+    const {email , code} = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      throw new Error('User not found.');
+    }
+
+    // Check if the provided code matches the stored code
+    if (user.verificationCode !== code) {
+      throw new Error('Invalid verification code.');
+    }
+
+    if(user.verificationCode === code){
+      console.log("Code correct");
+      const updatedUser = await User.updateOne(
+        { email: email },
+        {
+          $set: {
+            isVerified: true,
+          },
+        }
+      );
+
+      res.status(201).json({ message: "User is Verified.", updatedUser });
+
+    }
+
+  } catch (err) {
     next(err);
   }
-}
+};
+
+/* ************************************************************************* */
+
+
+
+
+/* ***************************** calculateAge ****************************** */
 
 function calculateAge(year, month, day) {
   const currentYear = new Date().getFullYear();
@@ -171,3 +157,109 @@ function calculateAge(year, month, day) {
   return age;
 }
 
+/* ************************************************************************* */
+
+/* ***************************** sendEmail ****************************** */
+
+async function sendEmail(email) {
+  // Create a transporter with your SMTP configuration
+  const transporter = nodemailer.createTransport({
+    service: "hotmail",
+    auth: {
+      user: process.env.EMAIL_SENDER, // Your email address
+      pass: process.env.EMAIL_SENDER_PASSWORD, // Your email password
+    },
+  });
+
+  // Define the email options
+  const mailOptions = {
+    from: process.env.EMAIL_SENDER, // Sender's email address
+    to: email, // Recipient's email address
+    subject: "Registration Confirmation",
+    text: `Thank you for registering! Your verification code is: ${User.verificationCode}`,
+  };
+
+  // Send the registration confirmation email
+  await transporter.sendMail(mailOptions);
+}
+
+/* ************************************************************************* */
+
+/* ***************************** generateVerificationCode ****************************** */
+
+async function generateVerificationCode(email) {
+  try {
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
+
+    User.verificationCode = verificationCode;
+    const updatedUser = await User.updateOne(
+      { email: email },
+      {
+        $set: {
+          verificationCode: verificationCode,
+        },
+      }
+    );
+
+    if (updatedUser.nModified === 0) {
+      throw new Error("User not found or not updated.");
+    }
+    return {
+      message: "Verification code updated successfully",
+      data: updatedUser,
+    };
+  } catch (err) {
+    throw new Error(`Error updating verification code: ${error.message}`);
+  }
+}
+
+/* ************************************************************************* */
+
+/* ***************************** deleteExpiredVerificationCodes ****************************** */
+
+async function deleteExpiredVerificationCodes() {
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+  await User.updateMany(
+    {
+      verificationCode: { $ne: null },
+      lastVerificationCodeRequest: { $lt: thirtyMinutesAgo },
+    },
+    { $unset: { verificationCode: 1 } }
+  );
+}
+/* ************************************************************************* */
+
+/* ***************************** createAccessToken ****************************** */
+
+function createAccessToken(email, role, user) {
+  const payload = {
+    email: email,
+    role: role,
+    user: user,
+  };
+
+  const option = {
+    expiresIn: "12h",
+  };
+
+  const token = JWT.sign(payload, process.env.ACCESS_TOKEN_SECRET, option);
+
+  return token;
+}
+
+/* ************************************************************************* */
+
+/* ***************************** createAccessToken ****************************** */
+
+function createRefreshToken(email, role) {
+  const payload = {
+    email: email,
+    role: role,
+  };
+
+  const token = JWT.sign(payload, process.env.REFRESH_SECRET_KEY);
+  return token;
+}
+
+/* ************************************************************************* */

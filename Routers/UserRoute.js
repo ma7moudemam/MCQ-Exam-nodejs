@@ -7,7 +7,9 @@ const { body } = require("express-validator");
 
 router.post('/login' , controller.login)
         .post('/register' , controller.register)
-        .post('/verifyCode' , controller)
+        .post('/verify-code',controller.verifyCode)
+       
+
 
 
 module.exports = router;

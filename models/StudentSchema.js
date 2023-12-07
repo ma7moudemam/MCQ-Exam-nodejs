@@ -57,6 +57,21 @@ const student = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    verificationCode:{
+      type:String,
+    },
+    lastVerificationCodeRequest: {
+      type: Date,
+      default: null,
+    },
+    requestsToday: {
+      type: Number,
+      default: 0,
+    },
+    isVerified:{
+      type:Boolean,
+      default:false
+    }
   },
   { timestamps: true }
 );
