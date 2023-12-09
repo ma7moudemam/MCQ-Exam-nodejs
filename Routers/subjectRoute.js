@@ -6,8 +6,8 @@ const isAuth = require('../MiddleWares/authMW');
 
 
 
-router.get('/',controller.getAllSubjects)
-        .get('/:id?', controller.getSubject)
-        .post('/', controller.addNewSubject)
+router.get('/',isAuth, controller.getAllSubjects)
+        .get('/:id?',isAuth, controller.getSubject)
+        .post('/', isAuth ,controller.addNewSubject)
 
 module.exports = router;
