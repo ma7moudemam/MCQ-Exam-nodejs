@@ -10,7 +10,7 @@ exports.getAllStudents = (req , res , next) =>{
     const limit =req.body.limit * 1 || 20;
     const skip = (page-1)*limit;
 
-    Student.find({}).skip(skip).limit(limit)
+    Student.find({}, {  _id: 1 ,userName:1 , email:1 , phoneNumber:1 ,image:1 , address:1 , dateOfBirth:1 }).skip(skip).limit(limit)
     .then(
         data=>{
             if(data.length == 0)  throw new Error('student Not Found');

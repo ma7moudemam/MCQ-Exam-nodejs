@@ -85,7 +85,7 @@ exports.register = async (req, res, next) => {
       },
       age: calculateAge(dateOfBirth.year, dateOfBirth.month, dateOfBirth.day),
       blocked: false,
-    });
+    } ,{  _id: 1 ,userName:1 , email:1 , phoneNumber:1 ,image:1 , address:1 , dateOfBirth:1 , age:1} );
 
     // Generate a verification code
     generateVerificationCode(email);
