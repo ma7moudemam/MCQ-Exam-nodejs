@@ -7,10 +7,28 @@ const isAuth = require('../MiddleWares/authMW');
 
 /**
  * @swagger
- * /subject:
+ * /subjects:
  *   get:
  *     summary: Get all subjects
  *     description: Retrieve a list of all subjects
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Success
+ *               data: [student1, student2]
+ *       '500':
+ *         description: Internal Server Error
+ */
+
+/**
+ * @swagger
+ * /subject:
+ *   get:
+ *     summary: Get subject
+ *     description: Retrieve a subject
  *     responses:
  *       '200':
  *         description: Successful response

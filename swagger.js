@@ -4,7 +4,7 @@ const options = {
   definition: {
     openapi: '3.0.0', // Specify the OpenAPI version
     info: {
-      title: 'Your API Title',
+      title: 'Grade Exam',
       version: '1.0.0',
       description: 'Your API Description',
     },
