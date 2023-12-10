@@ -4,9 +4,11 @@ const controller = require('../controllers/StudentController');
 const { body } = require("express-validator");
 
 const isAuth = require('../MiddleWares/authMW');
+const isAdmin = require('../MiddleWares/adminAuthMw');
 
 
-router.get('/',isAuth, controller.getAllStudents )
+
+router.get('/',isAdmin, controller.getAllStudents )
 
 
 
