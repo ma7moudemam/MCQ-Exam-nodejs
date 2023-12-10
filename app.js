@@ -7,6 +7,9 @@ const body_parser = require("body-parser");
 const multer = require("multer");
 const helmet = require("helmet");
 const xss = require("xss");
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+
 
 /* ****************** Routes ******************** */
 const studentRouter = require("./Routers/StudentsRoute");
@@ -22,6 +25,10 @@ const app = express();
 app.use(express.json({ limit: "5kb" })); // request body limit is 5kb
 
 app.use(helmet());
+
+
+// Serve Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(
   helmet.contentSecurityPolicy({
@@ -95,7 +102,7 @@ app.use(body_parser.urlencoded({ extended: false }));
 /* ************************ Routing ****************************  */
 
 app.use(authRouter);
-app.use("/student", studentRouter);
+app.use("/students", studentRouter);
 app.use("/subjects", subjectRouter);
 
 /* ************************************************************  */

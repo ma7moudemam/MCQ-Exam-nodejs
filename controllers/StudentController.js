@@ -22,3 +22,14 @@ exports.getAllStudents = (req , res , next) =>{
     })
 }
 
+
+exports.getStudent = async (req, res, next)=>{
+    try{
+
+        const { id} = req.body;
+       const student = await Student.findById({id});
+
+    }catch(err){
+        next(err);
+    }
+}
