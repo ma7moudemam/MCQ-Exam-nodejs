@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const { response } = require("express");
 const refreshTokens = require("../refreshTokens");
 const nodemailer = require("nodemailer");
+const uuid = require("uuid");
 
 /* ***************************** Login ****************************** */
 
@@ -65,27 +66,44 @@ exports.register = async (req, res, next) => {
       throw new Error("User already exists.");
     }
 
+    // Generate UUID for _id
+    const userId = uuid.v4();
+
     const hashedPassword = await bcrypt.hash(password, 15);
 
-    const user = await User.create({
-      userName,
-      email,
-      phoneNumber,
-      password: hashedPassword,
-      image,
-      address: {
-        city: address.city,
-        street: address.street,
-        building: address.building,
+    const user = await User.create(
+      {
+        _id: userId,
+        userName,
+        email,
+        phoneNumber,
+        password: hashedPassword,
+        image,
+        address: {
+          city: address.city,
+          street: address.street,
+          building: address.building,
+        },
+        dateOfBirth: {
+          day: dateOfBirth.day,
+          month: dateOfBirth.month,
+          year: dateOfBirth.year,
+        },
+        age: calculateAge(dateOfBirth.year, dateOfBirth.month, dateOfBirth.day),
+        blocked: false,
       },
-      dateOfBirth: {
-        day: dateOfBirth.day,
-        month: dateOfBirth.month,
-        year: dateOfBirth.year,
-      },
-      age: calculateAge(dateOfBirth.year, dateOfBirth.month, dateOfBirth.day),
-      blocked: false,
-    } ,{  _id: 1 ,userName:1 , email:1 , phoneNumber:1 ,image:1 , address:1 , dateOfBirth:1 , age:1 , isVerified:1} );
+      {
+        _id: 1,
+        userName: 1,
+        email: 1,
+        phoneNumber: 1,
+        image: 1,
+        address: 1,
+        dateOfBirth: 1,
+        age: 1,
+        isVerified: 1,
+      }
+    );
 
     // Generate a verification code
     generateVerificationCode(email);
@@ -104,21 +122,20 @@ exports.register = async (req, res, next) => {
 
 exports.verifyCode = async (req, res, next) => {
   try {
-
-    const {email , code} = req.body;
+    const { email, code } = req.body;
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      throw new Error('User not found.');
+      throw new Error("User not found.");
     }
 
     // Check if the provided code matches the stored code
     if (user.verificationCode !== code) {
-      throw new Error('Invalid verification code.');
+      throw new Error("Invalid verification code.");
     }
 
-    if(user.verificationCode === code){
+    if (user.verificationCode === code) {
       console.log("Code correct");
       const updatedUser = await User.updateOne(
         { email: email },
@@ -130,18 +147,13 @@ exports.verifyCode = async (req, res, next) => {
       );
 
       res.status(201).json({ message: "User is Verified.", updatedUser });
-
     }
-
   } catch (err) {
     next(err);
   }
 };
 
 /* ************************************************************************* */
-
-
-
 
 /* ***************************** calculateAge ****************************** */
 

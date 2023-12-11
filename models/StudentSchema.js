@@ -1,7 +1,12 @@
 const mongoose = require("mongoose");
 
+
 const student = new mongoose.Schema(
   {
+    _id: {
+      type: String,
+      default: 'ce5ce00c-a86e-4431-92a9-4869c5f13a5d', // Replace with a default UUID or remove this line if unnecessary
+    },
     userName: {
       type: String,
       require: true,
@@ -71,7 +76,12 @@ const student = new mongoose.Schema(
     isVerified:{
       type:Boolean,
       default:false
-    }
+    },
+    totalGrads: {
+      type: Number,
+      default: 0,
+    },
+    
   },
   { timestamps: true }
 );
