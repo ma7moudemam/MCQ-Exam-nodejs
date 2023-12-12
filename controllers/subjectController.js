@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const slugify = require("slugify");
 require("../models/subjectSchema");
 const Subjects = mongoose.model("subject");
+const uuid = require("uuid");
+
 
 exports.getAllSubjects = (req, res, next) => {
     const page = req.body.page * 1 || 1;
@@ -32,7 +34,11 @@ exports.getSubject = async (req , res, next)=>{
 
 exports.addNewSubject = async (req, res, next) => {
   try {
+
+    const subjectId = uuid.v4();
+
     let subject = new Subjects({
+      _id:subjectId,
       name: req.body.name,
       slug: slugify(req.body.name),
       questions: req.body.questions,
