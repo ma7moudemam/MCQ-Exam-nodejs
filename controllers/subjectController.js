@@ -73,3 +73,16 @@ exports.updateSubject = async(req , res,next)=>{
         next(err);
     }
 }
+
+exports.deleteSubject = async (req , res, next)=>{
+    try{
+      Subjects.findByIdAndDelete(req.params.id)
+              .then((data)=>{
+                if(data == null) throw new Error("Subject Not Found");
+                res.status(200).json({message:"Subject Deleted"});
+              })
+    }
+    catch(err){
+      next(err)
+    }
+}

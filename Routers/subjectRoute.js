@@ -3,12 +3,14 @@ const router = express.Router();
 const controller = require('../controllers/subjectController');
 const { body } = require("express-validator");
 const isAuth = require('../MiddleWares/authMW');
+const isAdmin = require('../MiddleWares/adminAuthMw');
 
 
 
 router.get('/',isAuth, controller.getAllSubjects)
         .get('/:id?',isAuth, controller.getSubject)
         .post('/', isAuth ,controller.addNewSubject)
+        .delete('/:id?',isAuth,controller.deleteSubject)
 
 module.exports = router;
 
