@@ -48,6 +48,80 @@ exports.login = async (req, res, next) => {
 
 /* ***************************** Register ****************************** */
 
+// exports.register = async (req, res, next) => {
+//   try {
+//     const {
+//       userName,
+//       email,
+//       phoneNumber,
+//       password,
+//       image,
+//       countryId,
+//       cityId,
+//       day,
+//       month,
+//       year,
+//     } = req.body;
+
+//     const existingUser = await User.findOne({ email });
+
+//     if (existingUser) {
+//       throw new Error("User already exists.");
+//     }
+
+//     // Validate base64 image
+//     if (!isValidBaseImage(image)) {
+//       throw new Error("Invalid Image");
+//     }
+
+//     // Generate UUID for _id
+//     const userId = uuid.v4();
+
+//     const hashedPassword = await bcrypt.hash(password, 15);
+
+//     const user = await User.create(
+//       {
+//         _id: userId,
+//         userName,
+//         email,
+//         phoneNumber,
+//         password: hashedPassword,
+//         image,
+//         countryId,
+//         cityId,
+//         day,
+//         month,
+//         year,
+//         age: calculateAge(year, month, day),
+//         blocked: false,
+//       },
+//       {
+//         _id: 1,
+//         userName: 1,
+//         email: 1,
+//         phoneNumber: 1,
+//         image: 1,
+//         address: 1,
+//         dateOfBirth: 1,
+//         age: 1,
+//         isVerified: 1,
+//       }
+//     );
+
+//     // Generate a verification code
+//     generateVerificationCode(email);
+
+//     sendEmail(email);
+
+//     res.status(201).json({ message: "User created successfully.", user });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
+
+
+
 exports.register = async (req, res, next) => {
   try {
     const {
@@ -55,9 +129,7 @@ exports.register = async (req, res, next) => {
       email,
       phoneNumber,
       password,
-      image,
-      address,
-      dateOfBirth,
+      confirmPassword
     } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -65,6 +137,11 @@ exports.register = async (req, res, next) => {
     if (existingUser) {
       throw new Error("User already exists.");
     }
+
+   // Check if password and confirmPassword match
+   if (password !== confirmPassword) {
+    throw new Error("Passwords do not match.");
+  }
 
     // Generate UUID for _id
     const userId = uuid.v4();
@@ -78,18 +155,6 @@ exports.register = async (req, res, next) => {
         email,
         phoneNumber,
         password: hashedPassword,
-        image,
-        address: {
-          city: address.city,
-          street: address.street,
-          building: address.building,
-        },
-        dateOfBirth: {
-          day: dateOfBirth.day,
-          month: dateOfBirth.month,
-          year: dateOfBirth.year,
-        },
-        age: calculateAge(dateOfBirth.year, dateOfBirth.month, dateOfBirth.day),
         blocked: false,
       },
       {
@@ -97,10 +162,6 @@ exports.register = async (req, res, next) => {
         userName: 1,
         email: 1,
         phoneNumber: 1,
-        image: 1,
-        address: 1,
-        dateOfBirth: 1,
-        age: 1,
         isVerified: 1,
       }
     );
@@ -115,6 +176,8 @@ exports.register = async (req, res, next) => {
     next(err);
   }
 };
+
+
 
 /* ************************************************************************* */
 
@@ -273,5 +336,14 @@ function createRefreshToken(email, role) {
   const token = JWT.sign(payload, process.env.REFRESH_SECRET_KEY);
   return token;
 }
+
+/* ************************************************************************* */
+
+/* ***************************** check image validation ****************************** */
+
+const isValidBaseImage = (str) => {
+  // Check if the string starts with 'data:image'
+  return /^data:image\/[a-z]+;base64,/.test(str);
+};
 
 /* ************************************************************************* */

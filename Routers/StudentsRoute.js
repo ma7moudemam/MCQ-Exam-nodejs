@@ -27,6 +27,7 @@ const isAdmin = require('../MiddleWares/adminAuthMw');
 
 
 router.get('/',isAdmin, controller.getAllStudents )
+        .put('/blockStudent' , isAdmin , controller.toggleBlocked)
 
 
 
